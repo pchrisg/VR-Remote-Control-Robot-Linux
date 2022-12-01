@@ -13,3 +13,13 @@
 [submodule "geometric_shapes"]
 	path = geometric_shapes
 	url = https://github.com/ros-planning/geometric_shapes.git
+[submodule "moveit_visual_tools"]
+	path = moveit_visual_tools
+	url = https://github.com/ros-planning/moveit_visual_tools.git
+[submodule "moveit_resources"]
+	path = moveit_resources
+	url = https://github.com/ros-planning/moveit_resources.git
+[submodule "src/universal_robot"]
+	path = src/universal_robot
+	url = https://github.com/ros-industrial/universal_robot.git
+	branch = melodic-devel-staging
