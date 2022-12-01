@@ -1,0 +1,3 @@
+geometry_msgs/Pose destination
+---
+moveit_msgs/RobotTrajectory trajectory
