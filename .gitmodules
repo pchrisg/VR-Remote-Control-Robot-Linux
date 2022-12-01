@@ -1,0 +1,15 @@
+[submodule "moveit"]
+	path = moveit
+	url = https://github.com/ros-planning/moveit.git
+[submodule "moveit_msgs"]
+	path = moveit_msgs
+	url = https://github.com/ros-planning/moveit_msgs.git
+[submodule "ROS-TCP-Endpoint"]
+	path = ROS-TCP-Endpoint
+	url = https://github.com/Unity-Technologies/ROS-TCP-Endpoint.git
+[submodule "Universal_Robots_ROS_Driver"]
+	path = Universal_Robots_ROS_Driver
+	url = https://github.com/UniversalRobots/Universal_Robots_ROS_Driver.git
+[submodule "geometric_shapes"]
+	path = geometric_shapes
+	url = https://github.com/ros-planning/geometric_shapes.git
