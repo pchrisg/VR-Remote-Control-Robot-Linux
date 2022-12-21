@@ -113,7 +113,7 @@ void sdof_translate(const chris_ur5_moveit::SdofTranslation::ConstPtr& tmsg)
 }
 */
 
-void add_collision_object(const moveit_msgs::CollisionObject::ConstPtr& box)
+void add_collision_object(const moveit_msgs::CollisionObject::ConstPtr& collisionObject)
 {
 /*  // Now let's define a collision object ROS message for the robot to avoid.
   moveit_msgs::CollisionObject collision_object;
@@ -142,10 +142,10 @@ void add_collision_object(const moveit_msgs::CollisionObject::ConstPtr& box)
   collision_object.operation = collision_object.ADD;
 */
 
-  m_CollisionObjects->push_back(*box);
+  m_CollisionObjects->push_back(*collisionObject);
   m_Scene->addCollisionObjects(*m_CollisionObjects);
 
-  ROS_INFO("added collision object");
+  ROS_INFO("added collision object %s", collisionObject->id.c_str());
 }
 
 /*
@@ -185,6 +185,33 @@ void add_object_to_attach()
 }
 */
 
+
+void remove_collision_object(const moveit_msgs::CollisionObject::ConstPtr& collisionObject)
+{
+  /*// Now, let's detach the cylinder from the robot's gripper.
+  ROS_INFO_NAMED("tutorial", "Detach the object from the robot");
+  move_group_interface.detachObject(object_to_attach.id);
+
+  // Show text in RViz of status
+  visual_tools.deleteAllMarkers();
+  visual_tools.publishText(text_pose, "Object detached from robot", rvt::WHITE, rvt::XLARGE);
+  visual_tools.trigger();
+
+  // Wait for MoveGroup to receive and process the attached collision object message
+  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
+  */
+
+  // Now, let's remove the objects from the world.
+  std::vector<std::string> object_ids;
+  object_ids.push_back(collisionObject->id);
+
+  m_Scene->removeCollisionObjects(object_ids);
+
+  ROS_INFO("removed collision object %s", collisionObject->id.c_str());
+}
+
+
+
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "chris_ur5_moveit");
@@ -200,6 +227,7 @@ int main(int argc, char** argv)
   ros::Subscriber sdof_trans_sub = node_handle.subscribe("chris_sdof_translate", 1, sdof_translate);
   //ros::Subscriber sdof_rot_sub = node_handle.subscribe("chris_sdof_rotate", 1, sdof_rotate);
   ros::Subscriber add_col_Obj_sub = node_handle.subscribe("chris_add_collision_object", 1, add_collision_object);
+  ros::Subscriber rem_col_Obj_sub = node_handle.subscribe("chris_remove_collision_object", 1, remove_collision_object);
   
   ROS_INFO("Ready to work");
 
