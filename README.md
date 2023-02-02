@@ -42,7 +42,7 @@ mkdir -p chris_ur_launch/launch
 roslaunch ur_calibration calibration_correction.launch robot_ip:=192.168.56.5 target_filename:="$(rospack find chris_ur_launch)/etc/ur5_calibration.yaml"
 
 roscp ur_robot_driver ur5_bringup.launch ur5.launch
-~~~~~~~~~~~~~~~~~~~
+
 # Next, modify the parameter section of the new launchfile to match your actual calibration
 # Note: Only the relevant lines are printed here
   <arg name="robot_ip" default="192.168.56.5"/>
@@ -72,7 +72,7 @@ rosrun unity_robotics_demo position_service.py
 # Chris UR5 Moveit #
 ####################
 roslaunch chris_ur_launch ur5.launch
-roslaunch ur5_moveit_config ur5_moveit_planning_execution.launch
+roslaunch ur5_moveit_config moveit_planning_execution.launch
 roslaunch chris_ur5_moveit chris_ur5_moveit.launch
 
 ####################
@@ -120,8 +120,15 @@ rosparam dump   dump parameters to file
 rosparam delete delete parameter
 rosparam list   list parameter names
 
+#################################
+# Creating a moveit config file #
+#################################
 
+~Create URDF from .xacro
+rosrun xacro xacro [name].xacro --inorder > [name].urdf
 
+~Run Moveit Setup Assistant (https://ros-planning.github.io/moveit_tutorials/doc/setup_assistant/setup_assistant_tutorial.html)
+roslaunch moveit_setup_assistant setup_assistant.launch
 
 
 
@@ -151,3 +158,7 @@ sudo update-grub
 
 
 https://github.com/UniversalRobots/Universal_Robots_ROS_Driver.git
+
+
+Git Token
+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
