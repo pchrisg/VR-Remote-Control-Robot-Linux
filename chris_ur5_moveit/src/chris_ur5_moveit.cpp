@@ -222,6 +222,7 @@ int main(int argc, char** argv)
   m_Ur5 = new moveit::planning_interface::MoveGroupInterface(PLANNING_GROUP);
   m_Scene = new moveit::planning_interface::PlanningSceneInterface();
   m_CollisionObjects = new std::vector<moveit_msgs::CollisionObject>();
+  (*m_Ur5).setPlanningTime(0.8);
   
   ros::ServiceServer planner_srv = node_handle.advertiseService("chris_plan_trajectory", plan_trajectory);
   ros::Subscriber execute_sub = node_handle.subscribe("chris_execute_plan", 1, execute_plan);
