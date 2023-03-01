@@ -75,6 +75,13 @@ roslaunch chris_ur_launch ur5.launch
 roslaunch ur5_moveit_config moveit_planning_execution.launch
 roslaunch chris_ur5_moveit chris_ur5_moveit.launch
 
+~~
+roslaunch robotiq_gazebo robotiq.launch
+rosrun robotiq_3f_gripper_joint_state_publisher robotiq_3f_gripper_joint_states model:=gazebo
+
+rosrun robotiq_3f_gripper_control Robotiq3FGripperController.py gazebo
+
+
 ####################
 # Catkin WorkSpace #
 ####################
@@ -130,6 +137,13 @@ rosrun xacro xacro [name].xacro --inorder > [name].urdf
 ~Run Moveit Setup Assistant (https://ros-planning.github.io/moveit_tutorials/doc/setup_assistant/setup_assistant_tutorial.html)
 roslaunch moveit_setup_assistant setup_assistant.launch
 
+
+############################
+# Robotiq 3-Finger Gripper #
+############################
+https://github.com/TAMS-Group/robotiq
+
+https://github.com/TAMS-Group/robotiq_s_model_action_server
 
 
 ######################################################################
