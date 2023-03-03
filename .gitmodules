@@ -25,7 +25,4 @@
 	branch = melodic-devel-staging
 [submodule "robotiq"]
 	path = robotiq
-	url = https://github.com/TAMS-Group/robotiq.git
-[submodule "robotiq_s_model_action_server"]
-	path = robotiq_s_model_action_server
-	url = https://github.com/TAMS-Group/robotiq_s_model_action_server.git
+	url = https://github.com/pchrisg/robotiq.git

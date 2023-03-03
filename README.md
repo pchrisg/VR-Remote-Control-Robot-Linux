@@ -77,7 +77,7 @@ roslaunch chris_ur5_moveit chris_ur5_moveit.launch
 
 ~~
 roslaunch robotiq_gazebo robotiq.launch
-rosrun robotiq_3f_gripper_joint_state_publisher robotiq_3f_gripper_joint_states model:=gazebo
+rosrun robotiq_3f_gripper_joint_state_publisher robotiq_3f_gripper_joint_states _model:=gazebo
 
 rosrun robotiq_3f_gripper_control Robotiq3FGripperController.py gazebo
 
