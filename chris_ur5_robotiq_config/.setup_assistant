@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: chris_ur5_moveit
+    relative_path: urdf/ur5_robotiq_3f_gripper_macro.xacro
+    xacro_args: ""
+  SRDF:
+    relative_path: config/ur5_robotiq_3f_gripper.srdf
+  CONFIG:
+    author_name: Chris Gloumeau
+    author_email: chris@gloumeau.uk
+    generated_timestamp: 1678202277

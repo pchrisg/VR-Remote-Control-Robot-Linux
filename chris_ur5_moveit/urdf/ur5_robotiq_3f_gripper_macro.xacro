@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="ur5_robotiq_3f_gripper">
+
+  <xacro:include filename="$(find ur_description)/urdf/inc/ur5_macro.xacro"/>
+  <xacro:include filename="$(find robotiq_3f_gripper_visualization)/cfg/robotiq-3f-gripper_articulated_macro.xacro" />
+
+    <!-- instantiate ur5 model -->
+    <xacro:ur5_robot prefix="" />
+    
+    <!-- instantiate 3f gripper model and attach -->
+    <xacro:robotiq-3f-gripper_articulated prefix="" />
+</robot>
