@@ -25,7 +25,7 @@ moveit::planning_interface::MoveGroupInterface* m_Ur5;
 moveit::planning_interface::PlanningSceneInterface* m_Scene;
 std::vector<moveit_msgs::CollisionObject>* m_CollisionObjects;
 
-void get_basic_info(moveit::planning_interface::MoveGroupInterface move_group_interface)
+void get_basic_info()
 {
   // Getting Basic Information
 
@@ -115,7 +115,7 @@ void sdof_translate(const chris_ur5_moveit::SdofTranslation::ConstPtr& tmsg)
 
 void remove_collision_objects_by_id(std::vector<std::string> object_ids)
 {
-  m_Scene->removeCollisionObjects(object_ids);
+  (*m_Scene).removeCollisionObjects(object_ids);
 
   for(int i = 0; i < object_ids.size(); i++)
   {
@@ -132,7 +132,7 @@ void remove_collision_object(const moveit_msgs::CollisionObject::ConstPtr& colli
 
   for(int i = 0; i < (*m_CollisionObjects).size(); i++)
   {
-    if(collisionObject->id == (*m_CollisionObjects)[i].id)
+    if((*collisionObject).id == (*m_CollisionObjects)[i].id)
       (*m_CollisionObjects).erase((*m_CollisionObjects).begin() + i);
   }
 }
@@ -153,15 +153,46 @@ void remove_all_collision_objects()
 
 void add_collision_object(const moveit_msgs::CollisionObject::ConstPtr& collisionObject)
 {
-  if(collisionObject->id == "0" && (*m_CollisionObjects).size() != 0)
+  if((*collisionObject).id == "0" && (*m_CollisionObjects).size() != 0)
   {
     remove_all_collision_objects();
   }
+  else
+  {
+    for(int i = 0; i < (*m_CollisionObjects).size(); i++)
+    {
+      if((*collisionObject).id == (*m_CollisionObjects)[i].id)
+        remove_collision_object(collisionObject);
+    }
 
-  (*m_CollisionObjects).push_back(*collisionObject);
-  (*m_Scene).addCollisionObjects(*m_CollisionObjects);
+    (*m_CollisionObjects).push_back(*collisionObject);
+    //(*m_Scene).addCollisionObjects(*m_CollisionObjects);
+    (*m_Scene).applyCollisionObject(*collisionObject);
 
-  ROS_INFO("added collision object %s", collisionObject->id.c_str());
+    ROS_INFO("added collision object %s", (*collisionObject).id.c_str());
+  }
+}
+
+void attach_collision_object(const moveit_msgs::CollisionObject::ConstPtr& attachableObject)
+{
+  for(int i = 0; i < (*m_CollisionObjects).size(); i++)
+  {
+    if((*attachableObject).id == (*m_CollisionObjects)[i].id)
+      remove_collision_object(attachableObject);
+  }
+
+  //(*m_CollisionObjects).push_back(*attachableObject);
+  //(*m_Scene).applyCollisionObject(*attachableObject);
+  (*m_Ur5).attachObject((*attachableObject).id, "tool0");
+
+  ROS_INFO("attached collision object %s", (*attachableObject).id.c_str());
+}
+
+void detach_collision_object(const moveit_msgs::CollisionObject::ConstPtr& attachableObject)
+{
+  (*m_Ur5).detachObject((*attachableObject).id);
+
+  ROS_INFO("detached collision object %s", (*attachableObject).id.c_str());
 }
 
 /*
@@ -196,21 +227,11 @@ void add_object_to_attach()
 
   // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
   // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
-  ROS_INFO_NAMED("tutorial", "Attach the object to the robot");
   move_group_interface.attachObject(object_to_attach.id, "panda_hand");
 
 
   // Now, let's detach the cylinder from the robot's gripper.
-  ROS_INFO_NAMED("tutorial", "Detach the object from the robot");
   move_group_interface.detachObject(object_to_attach.id);
-
-  // Show text in RViz of status
-  visual_tools.deleteAllMarkers();
-  visual_tools.publishText(text_pose, "Object detached from robot", rvt::WHITE, rvt::XLARGE);
-  visual_tools.trigger();
-
-  // Wait for MoveGroup to receive and process the attached collision object message
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
 }
 */
 
@@ -223,14 +244,18 @@ int main(int argc, char** argv)
   m_Scene = new moveit::planning_interface::PlanningSceneInterface();
   m_CollisionObjects = new std::vector<moveit_msgs::CollisionObject>();
   (*m_Ur5).setPlanningTime(0.8);
+
+  get_basic_info();
   
   ros::ServiceServer planner_srv = node_handle.advertiseService("chris_plan_trajectory", plan_trajectory);
   ros::Subscriber execute_sub = node_handle.subscribe("chris_execute_plan", 1, execute_plan);
   ros::Subscriber move_arm_sub = node_handle.subscribe("chris_move_arm", 5, move_arm);
-  ros::Subscriber sdof_trans_sub = node_handle.subscribe("chris_sdof_translate", 1, sdof_translate);
+  //ros::Subscriber sdof_trans_sub = node_handle.subscribe("chris_sdof_translate", 1, sdof_translate);
   //ros::Subscriber sdof_rot_sub = node_handle.subscribe("chris_sdof_rotate", 1, sdof_rotate);
   ros::Subscriber add_col_Obj_sub = node_handle.subscribe("chris_add_collision_object", 1, add_collision_object);
   ros::Subscriber rem_col_Obj_sub = node_handle.subscribe("chris_remove_collision_object", 1, remove_collision_object);
+  ros::Subscriber att_col_Obj_sub = node_handle.subscribe("chris_attach_collision_object", 1, attach_collision_object);
+  ros::Subscriber det_col_Obj_sub = node_handle.subscribe("chris_detach_collision_object", 1, detach_collision_object);
   //ros::Subscriber exit_game_sub = node_handle.subscribe("chris_game_exit", 1, game_exit);
   
   ros::AsyncSpinner spinner(1);
