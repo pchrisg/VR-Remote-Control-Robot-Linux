@@ -9,7 +9,7 @@
 #include <moveit_msgs/RobotState.h>
 #include <sensor_msgs/JointState.h>
 //#include "std_msgs/String.h"
-//#include "std_msgs/Empty.h"
+#include "std_msgs/Empty.h"
 
 #include <chris_ur5_moveit/TrajectoryPlannerService.h>
 #include <chris_ur5_moveit/SdofTranslation.h>
@@ -78,6 +78,12 @@ void move_arm(const geometry_msgs::Pose::ConstPtr& pose)
   (*m_Ur5).move();
 
   move_arm_spinner.stop();
+}
+
+void emergency_stop(const std_msgs::Empty::ConstPtr& msg)
+{
+  (*m_Ur5).stop();
+  ROS_INFO("robot stopped due to collision");
 }
 
 void sdof_translate(const chris_ur5_moveit::SdofTranslation::ConstPtr& tmsg)
@@ -153,24 +159,30 @@ void remove_all_collision_objects()
 
 void add_collision_object(const moveit_msgs::CollisionObject::ConstPtr& collisionObject)
 {
-  if((*collisionObject).id == "0" && (*m_CollisionObjects).size() != 0)
+  if((*collisionObject).id == "-1")
   {
-    remove_all_collision_objects();
-  }
-  else
-  {
-    for(int i = 0; i < (*m_CollisionObjects).size(); i++)
+    if ((*m_CollisionObjects).size() == 0)
+      ROS_INFO("no old collision objects to remove");
+    else
     {
-      if((*collisionObject).id == (*m_CollisionObjects)[i].id)
-        remove_collision_object(collisionObject);
+      ROS_INFO("removing old collision objects");
+      remove_all_collision_objects();
     }
-
-    (*m_CollisionObjects).push_back(*collisionObject);
-    //(*m_Scene).addCollisionObjects(*m_CollisionObjects);
-    (*m_Scene).applyCollisionObject(*collisionObject);
-
-    ROS_INFO("added collision object %s", (*collisionObject).id.c_str());
+    
+    return;
   }
+
+  for(int i = 0; i < (*m_CollisionObjects).size(); i++)
+  {
+    if((*collisionObject).id == (*m_CollisionObjects)[i].id)
+      remove_collision_object(collisionObject);
+  }
+
+  (*m_CollisionObjects).push_back(*collisionObject);
+  //(*m_Scene).addCollisionObjects(*m_CollisionObjects);
+  (*m_Scene).applyCollisionObject(*collisionObject);
+
+  ROS_INFO("added collision object %s", (*collisionObject).id.c_str());
 }
 
 void attach_collision_object(const moveit_msgs::CollisionObject::ConstPtr& attachableObject)
@@ -195,10 +207,9 @@ void detach_collision_object(const moveit_msgs::CollisionObject::ConstPtr& attac
   ROS_INFO("detached collision object %s", (*attachableObject).id.c_str());
 }
 
-/*
-void add_object_to_attach()
+/*Attaching objects to the robot
 {
-  // Attaching objects to the robot
+  // 
   // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   //
   // You can attach objects to the robot, so that it moves with the robot geometry.
@@ -235,6 +246,7 @@ void add_object_to_attach()
 }
 */
 
+
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "chris_ur5_moveit");
@@ -245,17 +257,19 @@ int main(int argc, char** argv)
   m_CollisionObjects = new std::vector<moveit_msgs::CollisionObject>();
   (*m_Ur5).setPlanningTime(0.8);
 
-  get_basic_info();
+  //get_basic_info();
   
   ros::ServiceServer planner_srv = node_handle.advertiseService("chris_plan_trajectory", plan_trajectory);
   ros::Subscriber execute_sub = node_handle.subscribe("chris_execute_plan", 1, execute_plan);
   ros::Subscriber move_arm_sub = node_handle.subscribe("chris_move_arm", 5, move_arm);
-  //ros::Subscriber sdof_trans_sub = node_handle.subscribe("chris_sdof_translate", 1, sdof_translate);
-  //ros::Subscriber sdof_rot_sub = node_handle.subscribe("chris_sdof_rotate", 1, sdof_rotate);
+  ros::Subscriber emg_stp_sub = node_handle.subscribe("chris_emergency_stop", 1, emergency_stop);
   ros::Subscriber add_col_Obj_sub = node_handle.subscribe("chris_add_collision_object", 1, add_collision_object);
   ros::Subscriber rem_col_Obj_sub = node_handle.subscribe("chris_remove_collision_object", 1, remove_collision_object);
   ros::Subscriber att_col_Obj_sub = node_handle.subscribe("chris_attach_collision_object", 1, attach_collision_object);
   ros::Subscriber det_col_Obj_sub = node_handle.subscribe("chris_detach_collision_object", 1, detach_collision_object);
+
+  //ros::Subscriber sdof_trans_sub = node_handle.subscribe("chris_sdof_translate", 1, sdof_translate);
+  //ros::Subscriber sdof_rot_sub = node_handle.subscribe("chris_sdof_rotate", 1, sdof_rotate);
   //ros::Subscriber exit_game_sub = node_handle.subscribe("chris_game_exit", 1, game_exit);
   
   ros::AsyncSpinner spinner(1);

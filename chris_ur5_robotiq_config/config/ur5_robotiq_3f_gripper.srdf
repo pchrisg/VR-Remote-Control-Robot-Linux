@@ -143,7 +143,6 @@
     <disable_collisions link1="finger_middle_link_2" link2="wrist_1_link" reason="Never"/>
     <disable_collisions link1="finger_middle_link_2" link2="wrist_2_link" reason="Never"/>
     <disable_collisions link1="finger_middle_link_2" link2="wrist_3_link" reason="Never"/>
-    <disable_collisions link1="finger_middle_link_3" link2="forearm_link" reason="Never"/>
     <disable_collisions link1="finger_middle_link_3" link2="wrist_1_link" reason="Never"/>
     <disable_collisions link1="finger_middle_link_3" link2="wrist_2_link" reason="Never"/>
     <disable_collisions link1="finger_middle_link_3" link2="wrist_3_link" reason="Never"/>
@@ -159,6 +158,30 @@
     <disable_collisions link1="wrist_1_link" link2="wrist_3_link" reason="Never"/>
     <disable_collisions link1="wrist_2_link" link2="wrist_3_link" reason="Adjacent"/>
     <disable_collisions link1="base_link_inertia" link2="wrist_1_link" reason="User"/>
-    <disable_collisions link1="shoulder_link" link2="wrist_1_link" reason="User"/>
     <disable_collisions link1="shoulder_link" link2="wrist_2_link" reason="User"/>
+    <disable_collisions link1="finger_1_link_1" link2="finger_middle_link_2" reason="User"/>
+    <disable_collisions link1="finger_1_link_1" link2="finger_middle_link_3" reason="User"/>
+    <disable_collisions link1="finger_1_link_2" link2="finger_middle_link_1" reason="User"/>
+    <disable_collisions link1="finger_1_link_2" link2="finger_middle_link_2" reason="User"/>
+    <disable_collisions link1="finger_1_link_2" link2="finger_middle_link_3" reason="User"/>
+    <disable_collisions link1="finger_1_link_3" link2="finger_middle_link_1" reason="User"/>
+    <disable_collisions link1="finger_1_link_3" link2="finger_middle_link_2" reason="User"/>
+    <disable_collisions link1="finger_1_link_3" link2="finger_middle_link_3" reason="User"/>
+    <disable_collisions link1="finger_2_link_1" link2="finger_middle_link_2" reason="User"/>
+    <disable_collisions link1="finger_2_link_1" link2="finger_middle_link_3" reason="User"/>
+    <disable_collisions link1="finger_2_link_2" link2="finger_middle_link_1" reason="User"/>
+    <disable_collisions link1="finger_2_link_2" link2="finger_middle_link_2" reason="User"/>
+    <disable_collisions link1="finger_2_link_2" link2="finger_middle_link_3" reason="User"/>
+    <disable_collisions link1="finger_2_link_3" link2="finger_middle_link_1" reason="User"/>
+    <disable_collisions link1="finger_2_link_3" link2="finger_middle_link_2" reason="User"/>
+    <disable_collisions link1="finger_2_link_3" link2="finger_middle_link_3" reason="User"/>
+    <disable_collisions link1="finger_1_link_3" link2="palm" reason="User"/>
+    <disable_collisions link1="finger_2_link_3" link2="palm" reason="User"/>
+    <disable_collisions link1="finger_middle_link_3" link2="palm" reason="User"/>
+    <disable_collisions link1="shoulder_link" link2="wrist_1_link" reason="User"/>
+    <disable_collisions link1="base_link_inertia" link2="wrist_3_link" reason="User"/>
+    <disable_collisions link1="base_link_inertia" link2="wrist_2_link" reason="User"/>
+    <disable_collisions link1="base_link_inertia" link2="palm" reason="User"/>
+    <disable_collisions link1="shoulder_link" link2="wrist_3_link" reason="User"/>
+    <disable_collisions link1="upper_arm_link" link2="wrist_3_link" reason="User"/>
 </robot>

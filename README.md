@@ -72,7 +72,8 @@ rosrun unity_robotics_demo position_service.py
 # Chris UR5 Moveit #
 ####################
 roslaunch chris_ur_launch ur5.launch
-roslaunch ur5_moveit_config moveit_planning_execution.launch
+# roslaunch ur5_moveit_config moveit_planning_execution.launch
+roslaunch chris_ur5_robotiq_config move_group.launch
 roslaunch chris_ur5_moveit chris_ur5_moveit.launch
 
 ~~
