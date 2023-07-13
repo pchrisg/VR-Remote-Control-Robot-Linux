@@ -1,6 +1,8 @@
+// MoveIt
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 
+// MoveIt Messages
 #include <moveit_msgs/DisplayRobotState.h>
 #include <moveit_msgs/DisplayTrajectory.h>
 #include <moveit_msgs/AttachedCollisionObject.h>
@@ -8,14 +10,17 @@
 #include <moveit_msgs/RobotState.h>
 #include <sensor_msgs/JointState.h>
 
+// Std Messages
 //#include "std_msgs/String.h"
 #include "std_msgs/Empty.h"
 
-#include <cmath>
-
+// Chris' Moveit Messages
 #include <chris_ur5_moveit/TrajectoryPlannerService.h>
 #include <chris_ur5_moveit/SdofTranslation.h>
 #include <chris_ur5_moveit/SdofRotation.h>
+
+
+#include <cmath>
 
 // Name of the movegroup
 static const std::string PLANNING_GROUP = "manipulator";
@@ -28,7 +33,7 @@ moveit::planning_interface::PlanningSceneInterface* m_Scene;
 
 std::vector<moveit_msgs::CollisionObject>* m_CollisionObjects;
 
-std::vector<double> m_StartJointValues{0.0f, -M_PI_2, -M_PI_2, -M_PI_2, M_PI_2, 0.0f};
+std::vector<double> m_StartJointValues{0.0f, -M_PI_2, -M_PI_2, -M_PI_2, M_PI_2, -M_PI_2};
 
 void get_basic_info()
 {
@@ -144,7 +149,7 @@ void remove_collision_objects_by_id(std::vector<std::string> objectIds)
 
   for(int i = 0; i < objectIds.size(); i++)
   {
-    ROS_INFO("removed collision object %s from planning scene", objectIds[i].c_str());
+    ROS_INFO("removed object %s from planning scene", objectIds[i].c_str());
   }
 }
 
@@ -182,39 +187,25 @@ void add_collision_object(const moveit_msgs::CollisionObject::ConstPtr& collisio
   if((*collisionObject).id == "-1")
   {
     if ((*m_CollisionObjects).size() == 0)
-      ROS_INFO("no old collision objects to remove");
+      ROS_INFO("no old objects to remove");
     else
     {
-      ROS_INFO("removing old collision objects");
+      ROS_INFO("removing old objects");
       remove_all_collision_objects();
     }
     
     return;
   }
 
-  /*for(int i = 0; i < (*m_CollisionObjects).size(); i++)
-  {
-    if((*collisionObject).id == (*m_CollisionObjects)[i].id)
-      remove_collision_object(collisionObject);
-  }*/
-
   (*m_CollisionObjects).push_back(*collisionObject);
 
   (*m_Scene).addCollisionObjects(*m_CollisionObjects);
-    ROS_INFO("adding collision object %s to planning scene", (*collisionObject).id.c_str());
+  ROS_INFO("added object %s to planning scene", (*collisionObject).id.c_str());
 }
 
+/*
 void attach_collision_object(const moveit_msgs::AttachedCollisionObject::ConstPtr& attachedCollisionObject)
 {
-  /*for(int i = 0; i < (*m_CollisionObjects).size(); i++)
-  {
-    if((*attachableObject).id == (*m_CollisionObjects)[i].id)
-      remove_collision_object(attachableObject);
-  }*/
-
-  //(*m_CollisionObjects).push_back(*attachableObject);
-  //(*m_Scene).applyCollisionObject(*attachableObject);
-
   std::map<std::string,moveit_msgs::CollisionObject> objects = (*m_Scene).getObjects();
 
   if(objects.size() == 0)
@@ -230,7 +221,7 @@ void attach_collision_object(const moveit_msgs::AttachedCollisionObject::ConstPt
   if((*m_Scene).applyAttachedCollisionObject(*attachedCollisionObject))
     ROS_INFO("applied attached collision object %s to planning scene", (*attachedCollisionObject).object.id.c_str());
 
-  if((*m_Ur5).attachObject((*attachedCollisionObject).object.id, (*attachedCollisionObject).link_name))
+  if((*m_Ur5).attachObject((*attachedCollisionObject).object.id.c_str(), (*attachedCollisionObject).link_name.c_str()))
     ROS_INFO("attached collision object %s to %s", (*attachedCollisionObject).object.id.c_str(), (*attachedCollisionObject).link_name.c_str());
 }
 
@@ -240,7 +231,7 @@ void detach_collision_object(const moveit_msgs::CollisionObject::ConstPtr& colli
     ROS_INFO("detached collision object %s from UR5", (*collisionObject).id.c_str());
 }
 
-/*Attaching objects to the robot
+Attaching objects to the robot
 {
   // 
   // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -279,7 +270,6 @@ void detach_collision_object(const moveit_msgs::CollisionObject::ConstPtr& colli
 }
 */
 
-
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "chris_ur5_moveit");
@@ -298,8 +288,9 @@ int main(int argc, char** argv)
   ros::Subscriber emgStpSub = nodeHandle.subscribe("chris_emergency_stop", 1, emergency_stop);
   ros::Subscriber addColObjSub = nodeHandle.subscribe("chris_add_collision_object", 1, add_collision_object);
   ros::Subscriber remColObjSub = nodeHandle.subscribe("chris_remove_collision_object", 1, remove_collision_object);
-  ros::Subscriber attColObjSub = nodeHandle.subscribe("chris_attach_collision_object", 1, attach_collision_object);
-  ros::Subscriber detColObjSub = nodeHandle.subscribe("chris_detach_collision_object", 1, detach_collision_object);
+  
+  //ros::Subscriber attColObjSub = nodeHandle.subscribe("chris_attach_collision_object", 1, attach_collision_object);
+  //ros::Subscriber detColObjSub = nodeHandle.subscribe("chris_detach_collision_object", 1, detach_collision_object);
 
   //ros::Subscriber sdof_trans_sub = node_handle.subscribe("chris_sdof_translate", 1, sdof_translate);
   //ros::Subscriber sdof_rot_sub = node_handle.subscribe("chris_sdof_rotate", 1, sdof_rotate);
