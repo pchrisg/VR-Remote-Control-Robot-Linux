@@ -2,7 +2,7 @@
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 
-// MoveIt Messages
+// MoveIt Messages	
 #include <moveit_msgs/DisplayRobotState.h>
 #include <moveit_msgs/DisplayTrajectory.h>
 #include <moveit_msgs/AttachedCollisionObject.h>
@@ -13,17 +13,19 @@
 // Std Messages
 //#include "std_msgs/String.h"
 #include "std_msgs/Empty.h"
+#include "std_msgs/Bool.h"
 
 // Chris' Moveit Messages
 #include <chris_ur5_moveit/TrajectoryPlannerService.h>
 #include <chris_ur5_moveit/SdofTranslation.h>
 #include <chris_ur5_moveit/SdofRotation.h>
 
-
 #include <cmath>
 
 // Name of the movegroup
 static const std::string PLANNING_GROUP = "manipulator";
+
+ros::Publisher m_PlanSuccesPub;
 
 // We use the :planning_interface:`MoveGroupInterface` class to control the movegroup
 moveit::planning_interface::MoveGroupInterface* m_Ur5;
@@ -35,83 +37,248 @@ std::vector<moveit_msgs::CollisionObject>* m_CollisionObjects;
 
 std::vector<double> m_StartJointValues{0.0f, -M_PI_2, -M_PI_2, -M_PI_2, M_PI_2, -M_PI_2};
 
+bool locked = false;
+
 void get_basic_info()
 {
-  // Getting Basic Information
+	// Getting Basic Information
 
-  // We can print the name of the reference frame for this robot.
-  ROS_INFO_NAMED("info", "Planning frame: %s", (*m_Ur5).getPlanningFrame().c_str());
+	// We can print the name of the reference frame for this robot.
+	ROS_INFO_NAMED("info", "Planning frame: %s", (*m_Ur5).getPlanningFrame().c_str());
 
-  // We can also print the name of the end-effector link for this group.
-  ROS_INFO_NAMED("info", "End effector link: %s", (*m_Ur5).getEndEffectorLink().c_str());
+	// We can also print the name of the end-effector link for this group.
+	ROS_INFO_NAMED("info", "End effector link: %s", (*m_Ur5).getEndEffectorLink().c_str());
 
-  // We can get a list of all the groups in the robot:
-  //ROS_INFO_NAMED("info", "Available Planning Groups:");
-  //std::copy((*m_Ur5).getJointModelGroupNames().begin(),
-  //          (*m_Ur5).getJointModelGroupNames().end(), std::ostream_iterator<std::string>(std::cout, ", "));
+	// We can get a list of all the groups in the robot:
+	//ROS_INFO_NAMED("info", "Available Planning Groups:");
+	//std::copy((*m_Ur5).getJointModelGroupNames().begin(),
+	//          (*m_Ur5).getJointModelGroupNames().end(), std::ostream_iterator<std::string>(std::cout, ", "));
 }
 
 void reset_pose(const std_msgs::Empty::ConstPtr& msg)
 {
-  ros::AsyncSpinner startPosSpinner(1);
-  startPosSpinner.start();
+	ros::AsyncSpinner startPosSpinner(1);
+	startPosSpinner.start();
 
-  ROS_INFO_NAMED("info", "Resetting Pose");
+	ROS_INFO_NAMED("info", "Resetting Pose");
 
-  (*m_Ur5).setJointValueTarget(m_StartJointValues);
-  (*m_Ur5).move();
+	(*m_Ur5).setJointValueTarget(m_StartJointValues);
+	(*m_Ur5).move();
 
-  startPosSpinner.stop();
+	startPosSpinner.stop();
 }
 
 bool plan_trajectory(chris_ur5_moveit::TrajectoryPlannerService::Request &req,
                      chris_ur5_moveit::TrajectoryPlannerService::Response &res)
 {
-  ros::AsyncSpinner planTrajSpinner(1);
-  planTrajSpinner.start();
+	ros::AsyncSpinner planTrajSpinner(1);
+	planTrajSpinner.start();
 
-  (*m_Ur5).setPoseTarget(req.destination);
-  moveit::planning_interface::MoveGroupInterface::Plan myPlan;
+	moveit::core::RobotState start_state(*(m_Ur5->getCurrentState()));
+	start_state.setFromIK((*m_Ur5).getRobotModel()->getJointModelGroup(PLANNING_GROUP), req.start);
+	(*m_Ur5).setStartState(start_state);
 
-  bool success = ((*m_Ur5).plan(myPlan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-  if(success)
-  {
-    res.trajectory = myPlan.trajectory_;
-    ROS_INFO_NAMED("info", "trajectory sent");
-  }
+	(*m_Ur5).setPoseTarget(req.destination);
+	moveit::planning_interface::MoveGroupInterface::Plan myPlan;
 
-  planTrajSpinner.stop();
-  return true;
+	bool success = ((*m_Ur5).plan(myPlan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+	if(success)
+	{
+		res.trajectory = myPlan.trajectory_;
+		ROS_INFO_NAMED("info", "trajectory sent");
+	}
+
+	planTrajSpinner.stop();
+	return true;
 }
 
 void execute_plan(const moveit_msgs::RobotTrajectory::ConstPtr& traj)
 {
-  ros::AsyncSpinner excPlanSpinner(1);
-  excPlanSpinner.start();
+	ros::AsyncSpinner excPlanSpinner(1);
+	excPlanSpinner.start();
 
-  (*m_Ur5).execute(*traj);
+	(*m_Ur5).execute(*traj);
 
-  excPlanSpinner.stop();
+	excPlanSpinner.stop();
 }
 
 void move_arm(const geometry_msgs::Pose::ConstPtr& pose)
 {
-  ros::AsyncSpinner moveArmSpinner(1);
-  moveArmSpinner.start();
+	if(!locked)
+	{
+		ros::AsyncSpinner moveArmSpinner(1);
+		moveArmSpinner.start();
 
-  (*m_Ur5).setPoseTarget(*pose);
-  (*m_Ur5).move();
+		moveit::core::RobotState start_state(*(m_Ur5->getCurrentState()));
+		(*m_Ur5).setStartState(start_state);
+		(*m_Ur5).setPoseTarget(*pose);
 
-  moveArmSpinner.stop();
+		moveit::planning_interface::MoveGroupInterface::Plan myPlan;
+		bool success = ((*m_Ur5).plan(myPlan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+		if(success)
+		{
+			std::vector<double> currjointvals = (*m_Ur5).getCurrentJointValues();
+
+			int size = myPlan.trajectory_.joint_trajectory.points.size();
+			std::vector<double> endJointValues = myPlan.trajectory_.joint_trajectory.points[size-1].positions;
+
+			bool goodPath = true;
+			for (int i = 0; i < currjointvals.size(); i = i+currjointvals.size()-1)
+			{
+				if(std::fabs(currjointvals[i] - endJointValues[i]) > M_PI)
+				{
+					ROS_WARN("Fail: ABORTED: Bad motion plan found. No execution attempted.");
+					goodPath = false;
+					break;
+				}
+			}
+			if(goodPath)
+			{
+				std::vector<double> midJointValues = myPlan.trajectory_.joint_trajectory.points[size/2].positions;
+				for (int i = currjointvals.size()-1; i < currjointvals.size(); i = i+currjointvals.size()-1)
+				{
+					if(std::fabs(midJointValues[i] - endJointValues[i]) > std::fabs(currjointvals[i] - endJointValues[i]))
+					{
+						ROS_WARN("Fail: ABORTED: Suboptimal motion plan. No execution attempted.");
+						goodPath = false;
+					}
+				}
+			}
+
+			std_msgs::Bool msg;
+			msg.data = false;
+
+			if(goodPath)
+			{
+				msg.data = true;
+				m_PlanSuccesPub.publish(msg);
+				(*m_Ur5).execute(myPlan);
+			}
+			else
+				m_PlanSuccesPub.publish(msg);
+		}
+
+		moveArmSpinner.stop();
+	}
 }
 
-void emergency_stop(const std_msgs::Empty::ConstPtr& msg)
+void emergency_stop(const std_msgs::Bool::ConstPtr& msg)
 {
-  (*m_Ur5).stop();
-  ROS_INFO("robot stopped due to collision");
+	if((*msg).data)
+	{
+		ros::AsyncSpinner emergencyStopSpinner(1);
+		emergencyStopSpinner.start();
+
+		(*m_Ur5).stop();
+		ROS_INFO("robot stopped due to collision");
+		locked = true;
+
+		emergencyStopSpinner.stop();
+	}
+	else
+	{
+		locked = false;
+		ROS_INFO("unlocked");
+	}
 }
 
-/*void sdof_translate(const chris_ur5_moveit::SdofTranslation::ConstPtr& tmsg)
+void remove_collision_objects_by_id(std::vector<std::string> objectIds)
+{
+	(*m_Scene).removeCollisionObjects(objectIds);
+
+	for(int i = 0; i < objectIds.size(); i++)
+		ROS_INFO("removed object %s from planning scene", objectIds[i].c_str());
+}
+
+void remove_collision_object(const moveit_msgs::CollisionObject::ConstPtr& collisionObject)
+{
+	// Now, let's remove the objects from the world.
+	std::vector<std::string> objectIds;
+	objectIds.push_back((*collisionObject).id);
+
+	remove_collision_objects_by_id(objectIds);
+
+	for(int i = 0; i < (*m_CollisionObjects).size(); i++)
+	{
+		if((*collisionObject).id == (*m_CollisionObjects)[i].id)
+			(*m_CollisionObjects).erase((*m_CollisionObjects).begin() + i);
+	}
+}
+
+void remove_all_collision_objects()
+{
+	std::vector<std::string> objectIds;
+
+	for(int i = 0; i < (*m_CollisionObjects).size(); i++)
+		objectIds.push_back((*m_CollisionObjects)[i].id);
+
+	remove_collision_objects_by_id(objectIds);
+
+	(*m_CollisionObjects).clear();
+	(*m_CollisionObjects).resize(0);
+}
+
+void add_collision_object(const moveit_msgs::CollisionObject::ConstPtr& collisionObject)
+{
+	if((*collisionObject).id == "-1")
+	{
+		if ((*m_CollisionObjects).size() == 0)
+			ROS_INFO("no old objects to remove");
+		else
+		{
+			ROS_INFO("removing old objects");
+			remove_all_collision_objects();
+		}
+
+		return;
+	}
+
+	(*m_CollisionObjects).push_back(*collisionObject);
+
+	(*m_Scene).addCollisionObjects(*m_CollisionObjects);
+	ROS_INFO("added object %s to planning scene", (*collisionObject).id.c_str());
+}
+
+int main(int argc, char** argv)
+{
+	ros::init(argc, argv, "chris_ur5_moveit");
+	ros::NodeHandle nodeHandle;
+
+	m_Ur5 = new moveit::planning_interface::MoveGroupInterface(PLANNING_GROUP);
+	m_Scene = new moveit::planning_interface::PlanningSceneInterface();
+	m_CollisionObjects = new std::vector<moveit_msgs::CollisionObject>();
+	(*m_Ur5).setPlanningTime(0.8);
+
+	m_PlanSuccesPub = nodeHandle.advertise<std_msgs::Bool>("chris_plan_success", 1000);
+	ros::ServiceServer plannerSrv = nodeHandle.advertiseService("chris_plan_trajectory", plan_trajectory);
+
+	ros::Subscriber resetPoseSub = nodeHandle.subscribe("chris_reset_pose", 1, reset_pose);
+	ros::Subscriber executeSub = nodeHandle.subscribe("chris_execute_plan", 1, execute_plan);
+	ros::Subscriber moveArmSub = nodeHandle.subscribe("chris_move_arm", 2, move_arm);
+	ros::Subscriber emgStpSub = nodeHandle.subscribe("chris_emergency_stop", 1, emergency_stop);
+	ros::Subscriber addColObjSub = nodeHandle.subscribe("chris_add_collision_object", 1, add_collision_object);
+	ros::Subscriber remColObjSub = nodeHandle.subscribe("chris_remove_collision_object", 1, remove_collision_object);
+
+	//ros::Subscriber attColObjSub = nodeHandle.subscribe("chris_attach_collision_object", 1, attach_collision_object);
+	//ros::Subscriber detColObjSub = nodeHandle.subscribe("chris_detach_collision_object", 1, detach_collision_object);
+	//ros::Subscriber sdof_trans_sub = node_handle.subscribe("chris_sdof_translate", 1, sdof_translate);
+	//ros::Subscriber sdof_rot_sub = node_handle.subscribe("chris_sdof_rotate", 1, sdof_rotate);
+	//ros::Subscriber exit_game_sub = node_handle.subscribe("chris_game_exit", 1, game_exit);
+
+	get_basic_info();
+	//reset_pose();
+
+	ros::AsyncSpinner mainSpinner(1);
+	mainSpinner.start();
+
+	ros::waitForShutdown();
+
+	return 0;
+}
+
+
+/*
+void sdof_translate(const chris_ur5_moveit::SdofTranslation::ConstPtr& tmsg)
 {
   ros::AsyncSpinner sdofTSpinner(1);
   sdofTSpinner.start();
@@ -141,69 +308,8 @@ void sdof_rotate(const chris_ur5_moveit::SdofRotation::ConstPtr& rmsg)
 
   m_Ur5->clearPathConstraints();
   sdofRSpinner.stop();
-}*/
-
-void remove_collision_objects_by_id(std::vector<std::string> objectIds)
-{
-  (*m_Scene).removeCollisionObjects(objectIds);
-
-  for(int i = 0; i < objectIds.size(); i++)
-  {
-    ROS_INFO("removed object %s from planning scene", objectIds[i].c_str());
-  }
 }
 
-void remove_collision_object(const moveit_msgs::CollisionObject::ConstPtr& collisionObject)
-{
-  // Now, let's remove the objects from the world.
-  std::vector<std::string> objectIds;
-  objectIds.push_back((*collisionObject).id);
-
-  remove_collision_objects_by_id(objectIds);
-
-  for(int i = 0; i < (*m_CollisionObjects).size(); i++)
-  {
-    if((*collisionObject).id == (*m_CollisionObjects)[i].id)
-      (*m_CollisionObjects).erase((*m_CollisionObjects).begin() + i);
-  }
-}
-
-void remove_all_collision_objects()
-{
-  std::vector<std::string> objectIds;
-  
-  for(int i = 0; i < (*m_CollisionObjects).size(); i++)
-  {
-    objectIds.push_back((*m_CollisionObjects)[i].id);
-  }
-  remove_collision_objects_by_id(objectIds);
-
-  (*m_CollisionObjects).clear();
-  (*m_CollisionObjects).resize(0);
-}
-
-void add_collision_object(const moveit_msgs::CollisionObject::ConstPtr& collisionObject)
-{
-  if((*collisionObject).id == "-1")
-  {
-    if ((*m_CollisionObjects).size() == 0)
-      ROS_INFO("no old objects to remove");
-    else
-    {
-      ROS_INFO("removing old objects");
-      remove_all_collision_objects();
-    }
-    
-    return;
-  }
-
-  (*m_CollisionObjects).push_back(*collisionObject);
-
-  (*m_Scene).addCollisionObjects(*m_CollisionObjects);
-  ROS_INFO("added object %s to planning scene", (*collisionObject).id.c_str());
-}
-
-/*
 void attach_collision_object(const moveit_msgs::AttachedCollisionObject::ConstPtr& attachedCollisionObject)
 {
   std::map<std::string,moveit_msgs::CollisionObject> objects = (*m_Scene).getObjects();
@@ -269,38 +375,3 @@ Attaching objects to the robot
   move_group_interface.detachObject(object_to_attach.id);
 }
 */
-
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "chris_ur5_moveit");
-  ros::NodeHandle nodeHandle;
-
-  m_Ur5 = new moveit::planning_interface::MoveGroupInterface(PLANNING_GROUP);
-  m_Scene = new moveit::planning_interface::PlanningSceneInterface();
-  m_CollisionObjects = new std::vector<moveit_msgs::CollisionObject>();
-  (*m_Ur5).setPlanningTime(0.8);
-
-  ros::ServiceServer plannerSrv = nodeHandle.advertiseService("chris_plan_trajectory", plan_trajectory);
-
-  ros::Subscriber resetPoseSub = nodeHandle.subscribe("chris_reset_pose", 1, reset_pose);
-  ros::Subscriber executeSub = nodeHandle.subscribe("chris_execute_plan", 1, execute_plan);
-  ros::Subscriber moveArmSub = nodeHandle.subscribe("chris_move_arm", 5, move_arm);
-  ros::Subscriber emgStpSub = nodeHandle.subscribe("chris_emergency_stop", 1, emergency_stop);
-  ros::Subscriber addColObjSub = nodeHandle.subscribe("chris_add_collision_object", 1, add_collision_object);
-  ros::Subscriber remColObjSub = nodeHandle.subscribe("chris_remove_collision_object", 1, remove_collision_object);
-  
-  //ros::Subscriber attColObjSub = nodeHandle.subscribe("chris_attach_collision_object", 1, attach_collision_object);
-  //ros::Subscriber detColObjSub = nodeHandle.subscribe("chris_detach_collision_object", 1, detach_collision_object);
-
-  //ros::Subscriber sdof_trans_sub = node_handle.subscribe("chris_sdof_translate", 1, sdof_translate);
-  //ros::Subscriber sdof_rot_sub = node_handle.subscribe("chris_sdof_rotate", 1, sdof_rotate);
-  //ros::Subscriber exit_game_sub = node_handle.subscribe("chris_game_exit", 1, game_exit);
-  
-  get_basic_info();
-  //reset_pose();
-
-  ros::AsyncSpinner mainSpinner(1);
-  mainSpinner.start();
-  ros::waitForShutdown();
-  return 0;
-}
