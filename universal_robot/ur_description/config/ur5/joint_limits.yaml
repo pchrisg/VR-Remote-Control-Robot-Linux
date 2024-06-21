@@ -15,7 +15,6 @@ joint_limits:
     has_position_limits: true
     has_velocity_limits: true
     max_effort: 150.0
-    #edited by chris
     max_position: !degrees  360.0
     max_velocity: !degrees  180.0
     min_position: !degrees -360.0
@@ -26,10 +25,9 @@ joint_limits:
     has_position_limits: true
     has_velocity_limits: true
     max_effort: 150.0
-    #edited by chris
-    max_position: !degrees  -30.0
+    max_position: !degrees  360.0
     max_velocity: !degrees  180.0
-    min_position: !degrees -180.0
+    min_position: !degrees -360.0
   elbow_joint:
     # acceleration limits are not publicly available
     has_acceleration_limits: false
@@ -47,10 +45,9 @@ joint_limits:
     #
     # Refer to https://github.com/ros-industrial/universal_robot/issues/265 for
     # more information.
-    #edited by chris
-    max_position: !degrees    0.0
+    max_position: !degrees  180.0
     max_velocity: !degrees  180.0
-    min_position: !degrees -160.0
+    min_position: !degrees -180.0
   wrist_1:
     # acceleration limits are not publicly available
     has_acceleration_limits: false
@@ -58,13 +55,9 @@ joint_limits:
     has_position_limits: true
     has_velocity_limits: true
     max_effort: 28.0
-    #max_position: !degrees    0.0
-    #max_velocity: !degrees  180.0
-    #min_position: !degrees -180.0
-    #edited by chris
-    max_position: !degrees   70.0
+    max_position: !degrees  360.0
     max_velocity: !degrees  180.0
-    min_position: !degrees -180.0
+    min_position: !degrees -360.0
   wrist_2:
     # acceleration limits are not publicly available
     has_acceleration_limits: false
@@ -72,13 +65,9 @@ joint_limits:
     has_position_limits: true
     has_velocity_limits: true
     max_effort: 28.0
-    #max_position: !degrees  180.0
-    #max_velocity: !degrees  180.0
-    #min_position: !degrees    0.0
-    #edited by chris
-    max_position: !degrees  180.0
+    max_position: !degrees  360.0
     max_velocity: !degrees  180.0
-    min_position: !degrees    0.0
+    min_position: !degrees -360.0
   wrist_3:
     # acceleration limits are not publicly available
     has_acceleration_limits: false
@@ -86,6 +75,6 @@ joint_limits:
     has_position_limits: true
     has_velocity_limits: true
     max_effort: 28.0
-    max_position: !degrees   90.0
+    max_position: !degrees  360.0
     max_velocity: !degrees  180.0
-    min_position: !degrees -270.0
+    min_position: !degrees -360.0

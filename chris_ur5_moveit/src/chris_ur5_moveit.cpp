@@ -25,8 +25,6 @@
 // Name of the movegroup
 static const std::string PLANNING_GROUP = "manipulator";
 
-ros::Publisher m_PlanSuccesPub;
-
 // We use the :planning_interface:`MoveGroupInterface` class to control the movegroup
 moveit::planning_interface::MoveGroupInterface* m_Ur5;
 
@@ -37,7 +35,8 @@ std::vector<moveit_msgs::CollisionObject>* m_CollisionObjects;
 
 std::vector<double> m_StartJointValues{0.0f, -M_PI_2, -M_PI_2, -M_PI_2, M_PI_2, -M_PI_2};
 
-bool locked = false;
+bool m_isLocked = false;
+bool m_isSuccess = true;
 
 void get_basic_info()
 {
@@ -104,7 +103,7 @@ void execute_plan(const moveit_msgs::RobotTrajectory::ConstPtr& traj)
 
 void move_arm(const geometry_msgs::Pose::ConstPtr& pose)
 {
-	if(!locked)
+	if(!m_isLocked)
 	{
 		ros::AsyncSpinner moveArmSpinner(1);
 		moveArmSpinner.start();
@@ -114,25 +113,24 @@ void move_arm(const geometry_msgs::Pose::ConstPtr& pose)
 		(*m_Ur5).setPoseTarget(*pose);
 
 		moveit::planning_interface::MoveGroupInterface::Plan myPlan;
-		bool success = ((*m_Ur5).plan(myPlan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-		if(success)
+		m_isSuccess = ((*m_Ur5).plan(myPlan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+		if(m_isSuccess)
 		{
 			std::vector<double> currjointvals = (*m_Ur5).getCurrentJointValues();
 
 			int size = myPlan.trajectory_.joint_trajectory.points.size();
 			std::vector<double> endJointValues = myPlan.trajectory_.joint_trajectory.points[size-1].positions;
 
-			bool goodPath = true;
 			for (int i = 0; i < currjointvals.size(); i = i+currjointvals.size()-1)
 			{
 				if(std::fabs(currjointvals[i] - endJointValues[i]) > M_PI)
 				{
 					ROS_WARN("Fail: ABORTED: Bad motion plan found. No execution attempted.");
-					goodPath = false;
+					m_isSuccess = false;
 					break;
 				}
 			}
-			if(goodPath)
+			if(m_isSuccess)
 			{
 				std::vector<double> midJointValues = myPlan.trajectory_.joint_trajectory.points[size/2].positions;
 				for (int i = currjointvals.size()-1; i < currjointvals.size(); i = i+currjointvals.size()-1)
@@ -140,22 +138,15 @@ void move_arm(const geometry_msgs::Pose::ConstPtr& pose)
 					if(std::fabs(midJointValues[i] - endJointValues[i]) > std::fabs(currjointvals[i] - endJointValues[i]))
 					{
 						ROS_WARN("Fail: ABORTED: Suboptimal motion plan. No execution attempted.");
-						goodPath = false;
+						m_isSuccess = false;
 					}
 				}
 			}
 
-			std_msgs::Bool msg;
-			msg.data = false;
+			
 
-			if(goodPath)
-			{
-				msg.data = true;
-				m_PlanSuccesPub.publish(msg);
+			if(m_isSuccess)
 				(*m_Ur5).execute(myPlan);
-			}
-			else
-				m_PlanSuccesPub.publish(msg);
 		}
 
 		moveArmSpinner.stop();
@@ -171,13 +162,13 @@ void emergency_stop(const std_msgs::Bool::ConstPtr& msg)
 
 		(*m_Ur5).stop();
 		ROS_INFO("robot stopped due to collision");
-		locked = true;
+		m_isLocked = true;
 
 		emergencyStopSpinner.stop();
 	}
 	else
 	{
-		locked = false;
+		m_isLocked = false;
 		ROS_INFO("unlocked");
 	}
 }
@@ -249,12 +240,12 @@ int main(int argc, char** argv)
 	m_CollisionObjects = new std::vector<moveit_msgs::CollisionObject>();
 	(*m_Ur5).setPlanningTime(0.8);
 
-	m_PlanSuccesPub = nodeHandle.advertise<std_msgs::Bool>("chris_plan_success", 1000);
+	ros::Publisher planSuccesPub = nodeHandle.advertise<std_msgs::Bool>("chris_plan_success", 1);
 	ros::ServiceServer plannerSrv = nodeHandle.advertiseService("chris_plan_trajectory", plan_trajectory);
 
 	ros::Subscriber resetPoseSub = nodeHandle.subscribe("chris_reset_pose", 1, reset_pose);
 	ros::Subscriber executeSub = nodeHandle.subscribe("chris_execute_plan", 1, execute_plan);
-	ros::Subscriber moveArmSub = nodeHandle.subscribe("chris_move_arm", 2, move_arm);
+	ros::Subscriber moveArmSub = nodeHandle.subscribe("chris_move_arm", 1, move_arm);
 	ros::Subscriber emgStpSub = nodeHandle.subscribe("chris_emergency_stop", 1, emergency_stop);
 	ros::Subscriber addColObjSub = nodeHandle.subscribe("chris_add_collision_object", 1, add_collision_object);
 	ros::Subscriber remColObjSub = nodeHandle.subscribe("chris_remove_collision_object", 1, remove_collision_object);
@@ -270,6 +261,17 @@ int main(int argc, char** argv)
 
 	ros::AsyncSpinner mainSpinner(1);
 	mainSpinner.start();
+
+	ros::Rate rate(100);
+
+	while (ros::ok())
+	{
+		std_msgs::Bool msg;
+		msg.data = m_isSuccess;
+		planSuccesPub.publish(msg);
+
+		rate.sleep();
+	}
 
 	ros::waitForShutdown();
 
