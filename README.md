@@ -1,24 +1,38 @@
-##############################
-# Universal Robot ROS DRIVER #
-##############################
-https://github.com/UniversalRobots/Universal_Robots_ROS_Driver
-https://github.com/ros-industrial/universal_robot
+# VR-Remote-Control-Robot-Linux
 
-~~~~~~~~~~~~
-~Base Setup~
-~~~~~~~~~~~~
-# source global ros
-source /opt/ros/noetic/setup.bash
+This code was only built on **Ubuntu Focal (20.04)** using **ROS Noetic Ninjemys**
+The robot we use is a **CB3 UR5 robot**.
 
-# create a catkin workspace
-mkdir -p catkin_ws/src && cd catkin_ws
+## Prerequisites
+* Git
+```
+# To install git
+sudo apt install git
+```
 
+* ROS
+*https://wiki.ros.org/noetic/Installation/Ubuntu*
+Follow the instructions to install ROS
+
+* Create a ROS Workspace
+*https://wiki.ros.org/ROS/Tutorials/InstallingandConfiguringROSEnvironment*
+```
+mkdir -p ~/catkin_ws/src
+cd ~/catkin_ws/
+catkin_make
+```
+
+
+## Universal Robot ROS DRIVER
+*https://github.com/UniversalRobots/Universal_Robots_ROS_Driver*
+
+```
 # clone the driver
+cd ~/catkin_ws/
 git clone https://github.com/UniversalRobots/Universal_Robots_ROS_Driver.git src/Universal_Robots_ROS_Driver
 
-# clone the description. Currently, it is necessary to use the melodic-devel-staging branch.cd ~/ws_moveit/src
-rosdep install -y --from-paths . --ignore-src --rosdistro noetic
-git clone -b melodic-devel-staging https://github.com/ros-industrial/universal_robot.git src/universal_robot
+# clone the description. Currently, it is necessary to use the melodic-devel branch.
+git clone -b melodic-devel https://github.com/ros-industrial/universal_robot.git src/universal_robot
 
 # install dependencies
 sudo apt update -qq
@@ -29,7 +43,125 @@ rosdep install --from-paths src --ignore-src -y
 catkin_make
 
 # activate the workspace (ie: source it)
-source devel/setup.bash
+echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+```
+
+
+
+## Setting up the simulated robot
+*https://github.com/UniversalRobots/Universal_Robots_ROS_Driver/blob/master/ur_robot_driver/doc/usage_example.md*
+
+* Virtualbox
+```
+# To install virtualbox
+sudo apt install virtualbox
+sudo apt-get install virtualbox-guest-utils virtualbox-guest-x11 virtualbox-guest-dkms
+```
+
+* URSim
+*https://www.universal-robots.com/download/software-cb-series/simulator-non-linux/offline-simulator-cb-series-non-linux-ursim-3158/*
+
+  - Download URSim
+
+  - Unpack the zipped virtual machine in a desired folder on your pc
+  ```
+  sudo apt-get install unrar
+  cd ~/Downloads/
+  mkdir ~/Documents/URSim_3.15.8.106339
+  unrar x URSim_VIRTUAL-3.15.8.106339.rar ~/Documents/URSim_3.15.8.106339
+  ```
+  - Start VirtualBox and press 'New'
+
+  - Define name (URSim_3.15.8), Type: Linux, Version: Ubuntu (64-bit)
+
+  - Select Memory size of 768 MB and press 'Next'
+
+  - Select Use an existing hard drive file and define the path to the folder where the zipped file was unpacked (~/Documents/URSim_3.15.8.106339), press 'Create'
+
+  - Press 'Start' for starting the virtual machine
+
+  - If an error saying 'Hardware acceleration is not available' is shown then it may be required to reboot the Windows computer into BIOS setup and enable hardware access to Virtual Machines and then restart Windows, VirtualBox and the virtual machine.
+
+
+* Setting up a network connection
+
+Next, setup a host network that will be used for the machine.
+
+  - In Virtualbox, click File > Host Network Manager, press 'Create'
+
+  - It should automatically get the static IP address 192.168.56.1. If not, set it up manually in the dialog. Close the window.
+
+  - In the main window, select the URSim_3.15.8 machine and click on Settings.
+
+  - On the left, select the Network point
+
+  - Activate a network adapter, setting the 'Attached to' dropdown menu to Host-only Adapter
+
+  - Select the network you just created, Click on the 'ok' button to close the window.
+
+
+* Installing the External Control URCap
+  - Download the latest **externalcontrol-x.x.x.urcap** from *https://github.com/UniversalRobots/Universal_Robots_ExternalControl_URCap/releases*
+
+  - Create a Virtualbox share folder
+  ```
+  mkdir ~/VboxShare
+  ```
+  - Move the **externalcontrol-x.x.x.urcap** to the Virtalbox share folder
+
+  - Make sure the virtual machine is off. Then select it and go to settings.
+
+  - Select 'Share Folders' from the left. Add a folder on the right. Set the path to the share fodler you created. Make sure not to select 'Read-only', Select 'Auto-mount' and leave 'Mount point' blank.
+
+  - Start the Virtual machine. Under Devices click 'Insert Guest Additions CD image...' and download from the internet when prompted.
+
+  - Open terminal in the virtual machine 'Start' -> 'System Tools' -> 'UXTerm'.
+
+  - Create a folder and mount the sharebox
+  ```
+  mkdir ShareFolder
+  sudo mount -t vboxsf VboxShare ShareFolder
+  ```
+
+  - Open the folder 'Start' -> 'Accessories' -> 'FileManager PCManFM'. open ShareFolder.
+
+  - copy the **externalcontrol-x.x.x.urcap** file to the 'Programs UR5' folder on the desktop.
+
+
+  - Start the URSim UR5 program and follow the instructions at *https://github.com/UniversalRobots/Universal_Robots_ROS_Driver/blob/master/ur_robot_driver/doc/install_urcap_cb3.md*
+
+### Testing Universal Robot ROS Driver
+
+In 3 separate windows run:
+```
+roslaunch ur_robot_driver ur5_bringup.launch robot_ip:=192.168.56.101
+
+roslaunch ur5_moveit_config moveit_planning_execution.launch
+
+roslaunch ur5_moveit_config moveit_rviz.launch rviz_config:=$(rospack find ur5_moveit_config)/launch/moveit.rviz
+```
+
+
+
+
+
+
+
+
+
+## Calibrating the robot
+*https://github.com/UniversalRobots/Universal_Robots_ROS_Driver/blob/master/ur_calibration/README.md*
+
+```
+# Replace your actual catkin_ws folder
+$ cd <catkin_ws>/src
+$ catkin_create_pkg example_organization_ur_launch ur_robot_driver \
+-D "Package containing calibrations and launch files for our UR robots."
+# Create a skeleton package
+$ mkdir -p example_organization_ur_launch/etc
+$ mkdir -p example_organization_ur_launch/launch
+```
 
 ~~~~~~~~~~~~~
 ~Calibration~
@@ -48,12 +180,8 @@ roscp ur_robot_driver ur5_bringup.launch ur5.launch
   <arg name="robot_ip" default="192.168.56.5"/>
   <arg name="kinematics_config" default="$(find chris_ur_launch)/etc/ur5_calibration.yaml"/>
 
-~~~~~~~~~~~
-~Execution~
-~~~~~~~~~~~
-roslaunch ur_robot_driver ur5_bringup.launch robot_ip:=192.168.56.5
-roslaunch ur5_moveit_config ur5_moveit_planning_execution.launch
-roslaunch ur5_moveit_config moveit_rviz.launch rviz_config:=$(rospack find ur5_moveit_config)/launch/moveit.rviz
+
+
 
 #########################
 # ROS Unity Integration #
