@@ -23,32 +23,6 @@ catkin_make
 ```
 
 
-## Universal Robot ROS DRIVER
-*https://github.com/UniversalRobots/Universal_Robots_ROS_Driver*
-
-```
-# clone the driver
-cd ~/catkin_ws/
-git clone https://github.com/UniversalRobots/Universal_Robots_ROS_Driver.git src/Universal_Robots_ROS_Driver
-
-# clone the description. Currently, it is necessary to use the melodic-devel branch.
-git clone -b melodic-devel https://github.com/ros-industrial/universal_robot.git src/universal_robot
-
-# install dependencies
-sudo apt update -qq
-rosdep update
-rosdep install --from-paths src --ignore-src -y
-
-# build the workspace
-catkin_make
-
-# activate the workspace (ie: source it)
-echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
-source ~/.bashrc
-```
-
-
-
 ## Setting up the simulated robot
 *https://github.com/UniversalRobots/Universal_Robots_ROS_Driver/blob/master/ur_robot_driver/doc/usage_example.md*
 
@@ -131,6 +105,32 @@ Next, setup a host network that will be used for the machine.
 
   - Start the URSim UR5 program and follow the instructions at *https://github.com/UniversalRobots/Universal_Robots_ROS_Driver/blob/master/ur_robot_driver/doc/install_urcap_cb3.md*
 
+
+## Universal Robot ROS DRIVER
+*https://github.com/UniversalRobots/Universal_Robots_ROS_Driver*
+
+```
+# clone the driver
+cd ~/catkin_ws/src
+git clone https://github.com/UniversalRobots/Universal_Robots_ROS_Driver.git src/Universal_Robots_ROS_Driver
+
+# clone the description. Currently, it is necessary to use the melodic-devel branch.
+git clone -b melodic-devel https://github.com/ros-industrial/universal_robot.git src/universal_robot
+
+# install dependencies
+sudo apt update -qq
+rosdep update
+rosdep install --from-paths src --ignore-src -y
+
+# build the workspace
+catkin_make
+
+# activate the workspace (ie: source it)
+echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+```
+
+
 ### Testing Universal Robot ROS Driver
 
 In 3 separate windows run:
@@ -143,45 +143,93 @@ roslaunch ur5_moveit_config moveit_rviz.launch rviz_config:=$(rospack find ur5_m
 ```
 
 
-
-
-
-
-
-
-
 ## Calibrating the robot
 *https://github.com/UniversalRobots/Universal_Robots_ROS_Driver/blob/master/ur_calibration/README.md*
 
 ```
 # Replace your actual catkin_ws folder
-$ cd <catkin_ws>/src
-$ catkin_create_pkg example_organization_ur_launch ur_robot_driver \
--D "Package containing calibrations and launch files for our UR robots."
-# Create a skeleton package
-$ mkdir -p example_organization_ur_launch/etc
-$ mkdir -p example_organization_ur_launch/launch
-```
-
-~~~~~~~~~~~~~
-~Calibration~
-~~~~~~~~~~~~~
-cd catkin_ws/src
+cd ~/catkin_ws/src
 catkin_create_pkg chris_ur_launch ur_client_library -D "Package containing calibrations and launch files for our UR robots."
+
+# Create a skeleton package
 mkdir -p chris_ur_launch/etc
 mkdir -p chris_ur_launch/launch
+```
 
-roslaunch ur_calibration calibration_correction.launch robot_ip:=192.168.56.5 target_filename:="$(rospack find chris_ur_launch)/etc/ur5_calibration.yaml"
+Create the calibration file
+```
+roslaunch ur_calibration calibration_correction.launch robot_ip:=192.168.56.101 target_filename:="$(rospack find chris_ur_launch)/etc/ur5_calibration.yaml"
+```
 
+Create a launchfile
+```
+cd ~/catkin_ws/src/chris_ur_launch/launch
 roscp ur_robot_driver ur5_bringup.launch ur5.launch
+```
 
-# Next, modify the parameter section of the new launchfile to match your actual calibration
-# Note: Only the relevant lines are printed here
-  <arg name="robot_ip" default="192.168.56.5"/>
+And Update the .lanch file
+```
+<!-- Note: Only the relevant lines are printed here-->
+  <arg name="robot_ip" default="192.168.0.101"/>
   <arg name="kinematics_config" default="$(find chris_ur_launch)/etc/ur5_calibration.yaml"/>
+```
 
 
+## Required Packages
+* ROS-TCP-Endpoint
+*https://github.com/Unity-Technologies/ROS-TCP-Endpoint/tree/993d366b8900bf9f3d2da444fde64c0379b4dc7c*
+```
+cd ~/catkin_ws/src
+git clone https://github.com/Unity-Technologies/ROS-TCP-Endpoint.git
 
+```
+
+* MoveIt
+```
+# make sure ROS is updated
+rosdep update
+sudo apt update
+sudo apt dist-upgrade
+
+# install dependencies
+sudo apt install python3-wstool python3-catkin-tools python3-rosdep
+
+
+# install MoveIt
+cd ~/catkin_ws
+wstool init src
+wstool merge -t src https://raw.githubusercontent.com/moveit/moveit/master/moveit.rosinstall
+wstool update -t src
+rosdep install -y --from-paths src --ignore-src --rosdistro ${ROS_DISTRO}
+catkin config --extend /opt/ros/${ROS_DISTRO} --cmake-args -DCMAKE_BUILD_TYPE=Release
+
+# disable All High-Level User Interfaces (optional)
+catkin config --blacklist \
+    moveit_commander \
+    moveit_setup_assistant \
+    moveit_ros_robot_interaction \
+    moveit_ros_visualization \
+    moveit_ros_benchmarks \
+    moveit_controller_manager_example \
+    moveit_ros_warehouse \
+    moveit_ros_manipulation \
+    moveit_visual_tools \
+    rviz_visual_tools \
+
+    # disable CHOMP Motion Planner (optional)
+    moveit_chomp_optimizer_adapter \
+    moveit_planners_chomp \
+    chomp_motion_planner
+```
+
+* robotiq
+*https://github.com/TAMS-Group/robotiq*
+```
+cd ~/catkin_ws/src
+git clone https://github.com/pchrisg/robotiq.git
+
+git clone https://github.com/pchrisg/Universal_Robots_Ros_Driver.git
+```
 
 #########################
 # ROS Unity Integration #
@@ -303,3 +351,22 @@ https://github.com/UniversalRobots/Universal_Robots_ROS_Driver.git
 
 Git Token
 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
+
+
+
+
+
+```
+# we need to make sure you have all dependencies installed.
+
+cd ~/catkin_ws
+rosdep update
+
+rosdep install --from-paths src/ --ignore-src --rosdistro noetic
+
+# now build
+catkin_make
+```
+
+
+```
