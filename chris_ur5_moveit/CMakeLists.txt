@@ -6,7 +6,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 find_package(catkin REQUIRED COMPONENTS
-  rospy
   roscpp
   std_msgs
   geometry_msgs
@@ -72,15 +71,3 @@ add_dependencies(chris_ur5_moveit chris_ur5_moveit_gencpp)
 
 install(TARGETS chris_ur5_moveit DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-
-
-catkin_install_python(PROGRAMS
-  scripts/mover.py
-#  scripts/trajectory_subscriber.py
-#  scripts/sim_real_pnp.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-#install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-#  PATTERN "setup_assistant.launch" EXCLUDE)
-#install(DIRECTORY config DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

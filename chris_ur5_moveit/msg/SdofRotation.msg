@@ -1,2 +1,0 @@
-geometry_msgs/Pose destination
-moveit_msgs/PositionConstraint position_constraint

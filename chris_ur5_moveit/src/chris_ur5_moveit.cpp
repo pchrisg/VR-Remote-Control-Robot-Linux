@@ -17,8 +17,6 @@
 
 // Chris' Moveit Messages
 #include <chris_ur5_moveit/TrajectoryPlannerService.h>
-#include <chris_ur5_moveit/SdofTranslation.h>
-#include <chris_ur5_moveit/SdofRotation.h>
 
 #include <cmath>
 
@@ -142,8 +140,6 @@ void move_arm(const geometry_msgs::Pose::ConstPtr& pose)
 					}
 				}
 			}
-
-			
 
 			if(m_isSuccess)
 				(*m_Ur5).execute(myPlan);

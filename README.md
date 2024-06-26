@@ -116,6 +116,7 @@ git clone https://github.com/Unity-Technologies/ROS-TCP-Endpoint.git
 ```
 
 * MoveIt
+*https://moveit.ros.org/install/source/*
 ```
 # make sure ROS is updated
 rosdep update
@@ -133,24 +134,6 @@ wstool merge -t src https://raw.githubusercontent.com/moveit/moveit/master/movei
 wstool update -t src
 rosdep install -y --from-paths src --ignore-src --rosdistro ${ROS_DISTRO}
 catkin config --extend /opt/ros/${ROS_DISTRO} --cmake-args -DCMAKE_BUILD_TYPE=Release
-
-# disable All High-Level User Interfaces (optional)
-catkin config --blacklist \
-    moveit_commander \
-    moveit_setup_assistant \
-    moveit_ros_robot_interaction \
-    moveit_ros_visualization \
-    moveit_ros_benchmarks \
-    moveit_controller_manager_example \
-    moveit_ros_warehouse \
-    moveit_ros_manipulation \
-    moveit_visual_tools \
-    rviz_visual_tools \
-
-    # disable CHOMP Motion Planner (optional)
-    moveit_chomp_optimizer_adapter \
-    moveit_planners_chomp \
-    chomp_motion_planner
 ```
 
 * Universal Robot ROS Driver
@@ -184,6 +167,35 @@ cd ~/catkin_ws/src
 git clone https://github.com/pchrisg/VR-Remote-Control-Robot-Linux.git
 ```
 
+### Build the catkin workspace
+
+* TO DO
+  - Verify which packages are needed
+
+```
+cd ~/catkin_ws
+
+# disable All High-Level User Interfaces (optional)
+catkin config --blacklist \
+    moveit_commander \
+    #moveit_setup_assistant \
+    moveit_ros_robot_interaction \
+    moveit_ros_visualization \
+    moveit_ros_benchmarks \
+    moveit_controller_manager_example \
+    moveit_ros_warehouse \
+    moveit_ros_manipulation \
+    moveit_visual_tools \
+    rviz_visual_tools \
+
+    # disable CHOMP Motion Planner (optional)
+    moveit_chomp_optimizer_adapter \
+    moveit_planners_chomp \
+    chomp_motion_planner
+
+catkin_make
+```
+
 
 ## Chris UR5 Moveit
 
@@ -194,6 +206,7 @@ Run in 5 different windows
 roslaunch chris_ur_launch ur5.launch
 roslaunch chris_ur5_robotiq_config move_group.launch
 roslaunch chris_ur5_moveit chris_ur5_moveit.launch
+roslaunch chris_robot_feedback chris_robot_feedback.launch
 
 # robotiq control
 roslaunch robotiq_gazebo robotiq.launch
