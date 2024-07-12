@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find chris_ur5_robotiq_config)/launch/move_group.launch">
+    <arg name="namespace" value="ur5"/>
+  </include>
+  <include file="$(find chris_ur5_robotiq_config)/launch/move_group.launch">
+    <arg name="namespace" value="feedback"/>
+  </include>
+</launch>

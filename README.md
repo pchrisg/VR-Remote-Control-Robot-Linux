@@ -196,23 +196,38 @@ catkin config --blacklist \
 catkin_make
 ```
 
+# Run
+**Run in 5 different terminals**
 
 ## Chris UR5 Moveit
-
-Run in 5 different windows
-
+* Universal_Robots_Ros_Driver
 ```
-# MoveIt planner
 roslaunch chris_ur_launch ur5.launch
-roslaunch chris_ur5_robotiq_config move_group.launch
+```
+* Moveit controller
+This can either be started in 1 terminal with 1 launch file
+```
+roslaunch chris_ur5_robotiq_config chris_move_group.launch
+```
+OR in 2 terminals with 2 launch files
+```
+roslaunch chris_ur5_robotiq_config movegroup.launch namespace:=ur5
+roslaunch chris_ur5_robotiq_config movegroup.launch namespace:=feedback
+```
+* ROS-TCP-Endpoint and topics
+```
 roslaunch chris_ur5_moveit chris_ur5_moveit.launch
-roslaunch chris_robot_feedback chris_robot_feedback.launch
+```
 
-# robotiq control
+## robotiq control
+* robotiq simulation
+```
 roslaunch robotiq_gazebo robotiq.launch
+```
+* joint state publisher
+```
 rosrun robotiq_3f_gripper_joint_state_publisher robotiq_3f_gripper_joint_states _model:=gazebo
 ```
-
 
 ## Useful ROS Commands
 
@@ -226,6 +241,7 @@ rosrun [package_name] [node_name]
 # debugging
 rosrun rqt_console rqt_console
 rosrun rqt_logger_level rqt_logger_level
+rosrun rqt_graph rqt_graph
 
 
 # ROS Topics

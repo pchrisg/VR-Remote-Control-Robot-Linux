@@ -1,4 +1,6 @@
 <launch>
+  <!-- Namespace Option -->
+  <arg name="namespace" default="" />
 
   <!-- GDB Debug Option -->
   <arg name="debug" default="false" />
@@ -44,7 +46,7 @@
   </include>
 
   <!-- Planning Pipelines -->
-  <group ns="move_group/planning_pipelines">
+  <group ns="$(arg namespace)/move_group/planning_pipelines">
 
     <!-- OMPL -->
     <include file="$(dirname)/planning_pipeline.launch.xml">
@@ -69,21 +71,24 @@
   </group>
 
   <!-- Trajectory Execution Functionality -->
-  <include ns="move_group" file="$(dirname)/trajectory_execution.launch.xml" if="$(arg allow_trajectory_execution)">
+  <include ns="$(arg namespace)/move_group" file="$(dirname)/trajectory_execution.launch.xml" if="$(arg allow_trajectory_execution)">
     <arg name="moveit_manage_controllers" value="true" />
     <arg name="moveit_controller_manager" value="$(arg moveit_controller_manager)" />
     <arg name="fake_execution_type" value="$(arg fake_execution_type)" />
   </include>
 
   <!-- Sensors Functionality -->
-  <include ns="move_group" file="$(dirname)/sensor_manager.launch.xml" if="$(arg allow_trajectory_execution)">
+  <include ns="$(arg namespace)/move_group" file="$(dirname)/sensor_manager.launch.xml" if="$(arg allow_trajectory_execution)">
     <arg name="moveit_sensor_manager" value="ur5_robotiq_3f_gripper" />
   </include>
 
   <!-- Start the actual move_group node/action server -->
-  <node name="move_group" launch-prefix="$(arg launch_prefix)" pkg="moveit_ros_move_group" type="move_group" respawn="false" output="screen" args="$(arg command_args)">
+  <node name="move_group" launch-prefix="$(arg launch_prefix)" pkg="moveit_ros_move_group" type="move_group" respawn="false" output="screen" args="$(arg command_args)" ns="$(arg namespace)">
     <!-- Set the display variable, in case OpenGL code is used internally -->
     <env name="DISPLAY" value="$(optenv DISPLAY :0)" />
+
+    <remap from="/$(arg namespace)/joint_states" to="/joint_states"/>
+    <remap from="/$(arg namespace)/scaled_pos_joint_traj_controller/follow_joint_trajectory" to="/scaled_pos_joint_traj_controller/follow_joint_trajectory"/>
 
     <param name="allow_trajectory_execution" value="$(arg allow_trajectory_execution)"/>
     <param name="sense_for_plan/max_safe_path_cost" value="$(arg max_safe_path_cost)"/>
@@ -92,7 +97,7 @@
     <param name="disable_capabilities" value="$(arg disable_capabilities)" />
 
     <!-- do not copy dynamics information from /joint_states to internal robot monitoring
-         default to false, because almost nothing in move_group relies on this information -->
+        default to false, because almost nothing in move_group relies on this information -->
     <param name="monitor_dynamics" value="false" />
 
     <!-- Publish the planning scene of the physical robot so that rviz plugin can know actual robot -->
