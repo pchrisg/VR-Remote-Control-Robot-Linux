@@ -8,6 +8,7 @@
 #include <moveit_msgs/AttachedCollisionObject.h>
 #include <moveit_msgs/CollisionObject.h>
 #include <moveit_msgs/RobotState.h>
+#include <moveit_msgs/RobotTrajectory.h>
 #include <sensor_msgs/JointState.h>
 
 // Std Messages
@@ -80,7 +81,29 @@ bool plan_trajectory(chris_ur5_moveit::TrajectoryPlannerService::Request &req,
 
 	bool success = ((*m_Rf).plan(myPlan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 	if (success)
-		res.trajectory = myPlan.trajectory_;
+	{
+		std::vector<double> currjointvals = (*m_Rf).getCurrentJointValues();
+
+		int size = myPlan.trajectory_.joint_trajectory.points.size();
+		std::vector<double> endJointValues = myPlan.trajectory_.joint_trajectory.points[size - 1].positions;
+
+		for (int i = 0; i < currjointvals.size(); i = i + currjointvals.size() - 1)
+		{
+			if (std::fabs(currjointvals[i] - endJointValues[i]) > M_PI)
+			{
+				success = false;
+				break;
+			}
+		}
+
+		if (success)
+			res.trajectory = myPlan.trajectory_;
+		else
+		{
+			moveit_msgs::RobotTrajectory emptyTrajectory;
+			res.trajectory = emptyTrajectory;
+		}
+	}
 
 	planTrajSpinner.stop();
 	return true;
@@ -119,7 +142,7 @@ void move_arm(const geometry_msgs::Pose::ConstPtr &pose)
 			{
 				if (std::fabs(currjointvals[i] - endJointValues[i]) > M_PI)
 				{
-					ROS_WARN("Fail: ABORTED: Bad motion plan found. No execution attempted.");
+					// ROS_WARN("Fail: ABORTED: Bad motion plan found. No execution attempted.");
 					m_isSuccess = false;
 					break;
 				}
@@ -131,7 +154,7 @@ void move_arm(const geometry_msgs::Pose::ConstPtr &pose)
 				{
 					if (std::fabs(midJointValues[i] - endJointValues[i]) > std::fabs(currjointvals[i] - endJointValues[i]))
 					{
-						ROS_WARN("Fail: ABORTED: Suboptimal motion plan. No execution attempted.");
+						// ROS_WARN("Fail: ABORTED: Suboptimal motion plan. No execution attempted.");
 						m_isSuccess = false;
 					}
 				}
