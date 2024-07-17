@@ -1,0 +1,6 @@
+<launch>
+    <node name="chris_robot_feedback" pkg="chris_ur5_moveit" type="chris_robot_feedback" output="screen">
+        <remap from="/feedback/joint_states" to="/joint_states"/>
+        <remap from="/feedback/chris_plan_trajectory" to="/chris_plan_trajectory"/>
+    </node>
+</launch>

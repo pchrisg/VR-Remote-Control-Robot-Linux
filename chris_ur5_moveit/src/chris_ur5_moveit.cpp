@@ -3,21 +3,13 @@
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 
 // MoveIt Messages
-#include <moveit_msgs/DisplayRobotState.h>
-#include <moveit_msgs/DisplayTrajectory.h>
-#include <moveit_msgs/AttachedCollisionObject.h>
 #include <moveit_msgs/CollisionObject.h>
 #include <moveit_msgs/RobotState.h>
-#include <moveit_msgs/RobotTrajectory.h>
-#include <sensor_msgs/JointState.h>
 
 // Std Messages
 // #include "std_msgs/String.h"
 #include "std_msgs/Empty.h"
 #include "std_msgs/Bool.h"
-
-// Chris' Moveit Messages
-#include <chris_ur5_moveit/TrajectoryPlannerService.h>
 
 #include <cmath>
 
@@ -26,7 +18,6 @@ static const std::string PLANNING_GROUP = "manipulator";
 
 // We use the :planning_interface:`MoveGroupInterface` class to control the movegroup
 moveit::planning_interface::MoveGroupInterface *m_Ur5;
-moveit::planning_interface::MoveGroupInterface *m_Rf;
 
 // We use the :planning_interface:`PlanningSceneInterface` class to add and remove collision objects in our "virtual world" scene
 moveit::planning_interface::PlanningSceneInterface *m_Scene;
@@ -66,49 +57,6 @@ void reset_pose(const std_msgs::Empty::ConstPtr &msg)
 	startPosSpinner.stop();
 }
 
-bool plan_trajectory(chris_ur5_moveit::TrajectoryPlannerService::Request &req,
-					 chris_ur5_moveit::TrajectoryPlannerService::Response &res)
-{
-	ros::AsyncSpinner planTrajSpinner(1);
-	planTrajSpinner.start();
-
-	moveit::core::RobotState start_state(*(m_Rf->getCurrentState()));
-	start_state.setFromIK((*m_Rf).getRobotModel()->getJointModelGroup(PLANNING_GROUP), req.start);
-	(*m_Rf).setStartState(start_state);
-
-	(*m_Rf).setPoseTarget(req.destination);
-	moveit::planning_interface::MoveGroupInterface::Plan myPlan;
-
-	bool success = ((*m_Rf).plan(myPlan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-	if (success)
-	{
-		std::vector<double> currjointvals = (*m_Rf).getCurrentJointValues();
-
-		int size = myPlan.trajectory_.joint_trajectory.points.size();
-		std::vector<double> endJointValues = myPlan.trajectory_.joint_trajectory.points[size - 1].positions;
-
-		for (int i = 0; i < currjointvals.size(); i = i + currjointvals.size() - 1)
-		{
-			if (std::fabs(currjointvals[i] - endJointValues[i]) > M_PI)
-			{
-				success = false;
-				break;
-			}
-		}
-
-		if (success)
-			res.trajectory = myPlan.trajectory_;
-		else
-		{
-			moveit_msgs::RobotTrajectory emptyTrajectory;
-			res.trajectory = emptyTrajectory;
-		}
-	}
-
-	planTrajSpinner.stop();
-	return true;
-}
-
 /*void execute_plan(const moveit_msgs::RobotTrajectory::ConstPtr &traj)
 {
 	ros::AsyncSpinner excPlanSpinner(1);
@@ -142,7 +90,7 @@ void move_arm(const geometry_msgs::Pose::ConstPtr &pose)
 			{
 				if (std::fabs(currjointvals[i] - endJointValues[i]) > M_PI)
 				{
-					// ROS_WARN("Fail: ABORTED: Bad motion plan found. No execution attempted.");
+					ROS_WARN("Fail: ABORTED: Bad motion plan found. No execution attempted.");
 					m_isSuccess = false;
 					break;
 				}
@@ -248,20 +196,15 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "chris_ur5_moveit");
 	ros::NodeHandle ur5nh("/ur5");
-	ros::NodeHandle rfnh("/feedback");
 
 	moveit::planning_interface::MoveGroupInterface::Options options(PLANNING_GROUP);
 	options.node_handle_ = ur5nh;
 
 	m_Ur5 = new moveit::planning_interface::MoveGroupInterface(options);
-	(*m_Ur5).setPlanningTime(0.8);
+	//(*m_Ur5).setPlanningTime(0.8);
 
 	m_Scene = new moveit::planning_interface::PlanningSceneInterface("/ur5");
 	m_CollisionObjects = new std::vector<moveit_msgs::CollisionObject>();
-
-	options.node_handle_ = rfnh;
-	m_Rf = new moveit::planning_interface::MoveGroupInterface(options);
-	(*m_Rf).setPlanningTime(0.2);
 
 	ros::Publisher planSuccesPub = ur5nh.advertise<std_msgs::Bool>("chris_plan_success", 1);
 
@@ -271,8 +214,6 @@ int main(int argc, char **argv)
 	ros::Subscriber emgStpSub = ur5nh.subscribe("/chris_emergency_stop", 1, emergency_stop);
 	ros::Subscriber addColObjSub = ur5nh.subscribe("/chris_add_collision_object", 1, add_collision_object);
 	ros::Subscriber remColObjSub = ur5nh.subscribe("/chris_remove_collision_object", 1, remove_collision_object);
-
-	ros::ServiceServer plannerSrv = rfnh.advertiseService("/chris_plan_trajectory", plan_trajectory);
 
 	get_basic_info();
 

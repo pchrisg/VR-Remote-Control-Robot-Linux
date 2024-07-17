@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find chris_ur5_moveit)/launch/chris_ur5_moveit.launch">
+  </include>
+  <include file="$(find chris_ur5_moveit)/launch/chris_robot_feedback.launch">
+  </include>
+</launch>

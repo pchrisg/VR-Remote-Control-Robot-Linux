@@ -9,13 +9,11 @@
 
     <node name="chris_ur5_moveit" pkg="chris_ur5_moveit" type="chris_ur5_moveit" output="screen">
         <remap from="/ur5/joint_states" to="/joint_states"/>
-        <remap from="/feedback/joint_states" to="/joint_states"/>
         <remap from="/ur5/chris_plan_success" to="/chris_plan_success"/>
         <remap from="/ur5/chris_reset_pose" to="/chris_reset_pose"/>
         <remap from="/ur5/chris_move_arm" to="/chris_move_arm"/>
         <remap from="/ur5/chris_emergency_stop" to="/chris_emergency_stop"/>
         <remap from="/ur5/chris_add_collision_object" to="/chris_add_collision_object"/>
         <remap from="/ur5/chris_remove_collision_object" to="/chris_remove_collision_object"/>
-        <remap from="/feedback/chris_plan_trajectory" to="/chris_plan_trajectory"/>
     </node>
 </launch>

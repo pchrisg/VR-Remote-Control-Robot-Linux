@@ -64,10 +64,14 @@ catkin_package(
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(chris_ur5_moveit src/chris_ur5_moveit.cpp)
+file(GLOB SOURCE_FILES src/*.cpp)
 
-target_link_libraries(chris_ur5_moveit ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-add_dependencies(chris_ur5_moveit chris_ur5_moveit_gencpp)
+foreach(SOURCE_PATH ${SOURCE_FILES})
+  get_filename_component(EXECUTABLE_NAME ${SOURCE_PATH} NAME_WE)
+  add_executable(${EXECUTABLE_NAME} ${SOURCE_PATH})
+  target_link_libraries(${EXECUTABLE_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+  add_dependencies(${EXECUTABLE_NAME} chris_ur5_moveit_gencpp)
+  install(TARGETS ${EXECUTABLE_NAME} DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+endforeach(SOURCE_PATH ${SOURCE_FILES})
 
-install(TARGETS chris_ur5_moveit DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
