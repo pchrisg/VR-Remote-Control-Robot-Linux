@@ -201,7 +201,7 @@ int main(int argc, char **argv)
 	options.node_handle_ = ur5nh;
 
 	m_Ur5 = new moveit::planning_interface::MoveGroupInterface(options);
-	//(*m_Ur5).setPlanningTime(0.8);
+	(*m_Ur5).setPlanningTime(1.5);
 
 	m_Scene = new moveit::planning_interface::PlanningSceneInterface("/ur5");
 	m_CollisionObjects = new std::vector<moveit_msgs::CollisionObject>();

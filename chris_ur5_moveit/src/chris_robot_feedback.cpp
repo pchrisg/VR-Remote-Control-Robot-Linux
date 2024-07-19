@@ -64,7 +64,7 @@ int main(int argc, char **argv)
     moveit::planning_interface::MoveGroupInterface::Options options(PLANNING_GROUP);
     options.node_handle_ = rfnh;
     m_Rf = new moveit::planning_interface::MoveGroupInterface(options);
-    //(*m_Rf).setPlanningTime(0.8);
+    (*m_Rf).setPlanningTime(0.1);
 
     ros::ServiceServer plannerSrv = rfnh.advertiseService("/chris_plan_trajectory", plan_trajectory);
 

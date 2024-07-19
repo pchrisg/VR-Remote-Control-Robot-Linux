@@ -214,11 +214,16 @@ OR in 2 terminals with 2 launch files
 roslaunch chris_ur5_robotiq_config movegroup.launch namespace:=ur5
 roslaunch chris_ur5_robotiq_config movegroup.launch namespace:=feedback
 ```
-* ROS-TCP-Endpoint and topics
+* ROS-TCP-Endpoint and Movegroups
+This can either be started in 1 terminal with 1 launch file
+```
+roslaunch chris_ur5_moveit chris_ur5_with_feedback.launch
+```
+OR in 2 terminals with 2 launch files
 ```
 roslaunch chris_ur5_moveit chris_ur5_moveit.launch
+roslaunch chris_ur5_moveit chris_robot_feedback.launch
 ```
-
 ## robotiq control
 * robotiq simulation
 ```
