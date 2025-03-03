@@ -145,7 +145,7 @@ cd ~/catkin_ws/src
 git clone https://github.com/pchrisg/Universal_Robots_Ros_Driver.git
 ```
 
-* robotiq
+* Robotiq
 *https://github.com/TAMS-Group/robotiq*
 
 Some changes were made to the files:
@@ -167,15 +167,15 @@ cd ~/catkin_ws/src
 git clone https://github.com/pchrisg/VR-Remote-Control-Robot-Linux.git
 ```
 
-### Build the catkin workspace
+## Build the catkin workspace
 
-* TO DO
-  - Verify which packages are needed
-
+* Go to the workspace
 ```
 cd ~/catkin_ws
+```
 
-# disable All High-Level User Interfaces (optional)
+* (Optional) Disable all high-level user interfaces 
+```
 catkin config --blacklist \
     moveit_commander \
     #moveit_setup_assistant \
@@ -192,59 +192,84 @@ catkin config --blacklist \
     moveit_chomp_optimizer_adapter \
     moveit_planners_chomp \
     chomp_motion_planner
+```
 
+* Build the workspace
+```
 catkin_make
 ```
 
+# Run
+**Run in 5 different terminals**
 
 ## Chris UR5 Moveit
-
-Run in 5 different windows
+* Universal_Robots_Ros_Driver
+Open VRSim, load the program, and run the following code in your first terminal:
 
 ```
-# MoveIt planner
 roslaunch chris_ur_launch ur5.launch
-roslaunch chris_ur5_robotiq_config move_group.launch
-roslaunch chris_ur5_moveit chris_ur5_moveit.launch
-roslaunch chris_robot_feedback chris_robot_feedback.launch
+```
 
-# robotiq control
+Go back to VRSim and press the start button.
+
+* Moveit controller
+This can either be started in 1 terminal with 1 launch file
+```
+roslaunch chris_ur5_robotiq_config move_group.launch
+```
+
+* ROS-TCP-Endpoint and Movegroups
+This can either be started in 1 terminal with 1 launch file
+```
+roslaunch chris_ur5_moveit chris_ur5_moveit.launch
+```
+
+## robotiq control
+* Robotiq simulation
+```
 roslaunch robotiq_gazebo robotiq.launch
+```
+* Joint state publisher
+```
 rosrun robotiq_3f_gripper_joint_state_publisher robotiq_3f_gripper_joint_states _model:=gazebo
 ```
 
-
-## Useful ROS Commands
-
+# Useful ROS Commands
+* General
 ```
 roscore
 rosnode list
 rosnode info </nodename>
 rosnode ping <nodename>
 rosrun [package_name] [node_name]
+```
 
-# debugging
+* Debugging
+```
 rosrun rqt_console rqt_console
 rosrun rqt_logger_level rqt_logger_level
+rosrun rqt_graph rqt_graph
+```
 
-
-# ROS Topics
+* ROS Topics
+```
 rostopic list -v
 rostopic type <topicname>
 rosmsg show <topicname>
+```
 
-
-# ROS Service
+* ROS Service
+```
 rosservice list 
 rosservice call
 rosservice type
 rosservice find
 rosservice uri
-
 rosservice type /spawn | rossrv show
+```
 
-
-# ROS Params
+* ROS Params
+```
 rosparam set    set parameter
 rosparam get    get parameter
 rosparam load   load parameters from file
@@ -253,16 +278,14 @@ rosparam delete delete parameter
 rosparam list   list parameter names
 ```
 
+# Creating a moveit config file
 
-## Creating a moveit config file
+* Create URDF from .xacro
 ```
-# Create URDF from .xacro
 rosrun xacro xacro [name].xacro > [name].urdf
+```
 
-# Run Moveit Setup Assistant (https://ros-planning.github.io/moveit_tutorials/doc/setup_assistant/setup_assistant_tutorial.html)
+* Run Moveit Setup Assistant (https://ros-planning.github.io/moveit_tutorials/doc/setup_assistant/setup_assistant_tutorial.html)
+```
 roslaunch moveit_setup_assistant setup_assistant.launch
 ```
-
-
-# Git Token
-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

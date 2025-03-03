@@ -35,7 +35,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 roslaunch_add_file_check(launch)
 
-add_message_files(DIRECTORY msg)
 add_service_files(DIRECTORY srv)
 
 generate_messages(DEPENDENCIES
